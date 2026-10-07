@@ -1,0 +1,59 @@
+bundle:
+  name: sdtm-agent-chatbot
+
+variables:
+  catalog:
+    description: Unity Catalog catalog for the registered agent model
+    default: main
+  schema:
+    description: Schema for the registered agent model
+    default: sdtm_agent
+  agent_endpoint_name:
+    description: Model Serving endpoint that hosts the SDTM agent
+    default: sdtm-agent
+  llm_endpoint:
+    description: Foundation model endpoint the agent uses (must support tool calling)
+    default: databricks-meta-llama-3-3-70b-instruct
+  warehouse_id:
+    description: SQL warehouse the agent uses for read-only queries and validation
+    default: ""
+
+resources:
+  jobs:
+    deploy_sdtm_agent:
+      name: "[${bundle.target}] Deploy SDTM agent"
+      tasks:
+        - task_key: deploy_agent
+          notebook_task:
+            notebook_path: ./notebooks/01_deploy_agent.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+              model_name: sdtm_agent
+              endpoint_name: ${var.agent_endpoint_name}
+              llm_endpoint: ${var.llm_endpoint}
+              warehouse_id: ${var.warehouse_id}
+
+  apps:
+    sdtm_chatbot:
+      name: sdtm-chatbot
+      description: Chat interface for the CDISC SDTM agent
+      source_code_path: ./app
+      resources:
+        - name: serving-endpoint
+          description: SDTM agent serving endpoint
+          serving_endpoint:
+            name: ${var.agent_endpoint_name}
+            permission: CAN_QUERY
+
+targets:
+  dev:
+    mode: development
+    default: true
+    # workspace:
+    #   host: https://<your-workspace>.cloud.databricks.com
+
+  prod:
+    mode: production
+    # workspace:
+    #   host: https://<your-workspace>.cloud.databricks.com

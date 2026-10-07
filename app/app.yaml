@@ -1,0 +1,8 @@
+command: ["streamlit", "run", "app.py"]
+
+env:
+  # Name of the agent serving endpoint, injected from the app resource "serving-endpoint"
+  - name: SERVING_ENDPOINT
+    valueFrom: serving-endpoint
+  - name: STREAMLIT_BROWSER_GATHER_USAGE_STATS
+    value: "false"
