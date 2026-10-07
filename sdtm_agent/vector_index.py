@@ -61,7 +61,7 @@ def build_corpus_table(spark: Any, config: AgentConfig, ig_volume_path: str | No
     table = f"{config.metadata_schema}.sdtm_ig_chunks"
     spark.sql(
         f"CREATE TABLE IF NOT EXISTS {table} (id STRING, domain STRING, chunk_type STRING, variable STRING, "
-        f"title STRING, content STRING, source STRING) TBLPROPERTIES (delta.enableChangeDataFeed = true)"
+        f"title STRING, content STRING, source STRING) USING DELTA TBLPROPERTIES (delta.enableChangeDataFeed = true)"
     )
     rows = [tuple(c.get(k) for k in CHUNK_COLUMNS) for c in {c["id"]: c for c in chunks}.values()]
     df = spark.createDataFrame(rows, schema=", ".join(f"{c} STRING" for c in CHUNK_COLUMNS))

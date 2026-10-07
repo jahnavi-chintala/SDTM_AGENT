@@ -31,7 +31,7 @@ def ddl(config: AgentConfig) -> list[str]:
             approved_by STRING,
             comment STRING,
             updated_at TIMESTAMP
-        ) COMMENT 'SDTM mapping specs proposed by the agent and reviewed in chat'
+        ) USING DELTA COMMENT 'SDTM mapping specs proposed by the agent and reviewed in chat'
         TBLPROPERTIES (delta.enableChangeDataFeed = true)""",
         f"""CREATE TABLE IF NOT EXISTS {config.validation_results_table} (
             run_id STRING,
@@ -46,7 +46,7 @@ def ddl(config: AgentConfig) -> list[str]:
             record_count BIGINT,
             findings_json STRING,
             validated_at TIMESTAMP
-        ) COMMENT 'SDTM validation results per transform run'""",
+        ) USING DELTA COMMENT 'SDTM validation results per transform run'""",
     ]
 
 

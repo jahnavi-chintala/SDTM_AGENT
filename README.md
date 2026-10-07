@@ -113,6 +113,8 @@ and extend `CONTROLLED_TERMINOLOGY` (or point it at a CT table) for full codelis
 
 ## Setup
 
+**Full step-by-step guide: [docs/DATABRICKS_SETUP.md](docs/DATABRICKS_SETUP.md).** Summary:
+
 Prerequisites: Unity Catalog, serverless jobs, Model Serving, Vector Search, Databricks Apps,
 a SQL warehouse, and the Databricks CLI ≥ 0.250 (`databricks auth login`).
 
@@ -155,6 +157,7 @@ approved specs nightly.
 ```bash
 pip install -e ".[agent,dev]"
 pip install fastapi httpx uvicorn   # for the app backend tests
+pip install pyspark==3.5.3 delta-spark==3.2.1   # optional: end-to-end Spark tests (needs Java 17+)
 pytest              # PySpark executor test runs only if pyspark is installed
 npm --prefix app run typecheck
 ```
