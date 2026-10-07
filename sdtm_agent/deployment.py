@@ -76,6 +76,7 @@ def deploy_endpoint(
     version: int | str,
     endpoint_name: str,
     secret_scope: str | None = None,
+    scale_to_zero: bool = True,
 ) -> Any:
     """Deploy to Mosaic AI Model Serving with databricks-agents (also creates a review app
     and inference tables).
@@ -83,6 +84,7 @@ def deploy_endpoint(
     The agent writes mapping specs and starts the transform job, which automatic
     auth passthrough does not cover. Give the endpoint a service principal by storing
     its OAuth credentials in `secret_scope` (keys: host, client_id, client_secret).
+    Some workspaces (e.g. Free Edition) only allow endpoints that scale to zero.
     """
     from databricks import agents
 
@@ -97,7 +99,7 @@ def deploy_endpoint(
         uc_model_name,
         int(version),
         endpoint_name=endpoint_name,
-        scale_to_zero=False,
+        scale_to_zero=scale_to_zero,
         environment_vars=env or None,
         tags={"project": "sdtm-mapping-agent"},
     )
