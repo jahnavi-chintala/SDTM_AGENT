@@ -1,47 +1,136 @@
 bundle:
-  name: sdtm-agent-chatbot
+  name: sdtm-mapping-agent
 
 variables:
   catalog:
-    description: Unity Catalog catalog for the registered agent model
+    description: Catalog for agent metadata (specs, validation results, IG index) and the registered model
     default: main
-  schema:
-    description: Schema for the registered agent model
+  metadata_schema_name:
     default: sdtm_agent
+  bronze_catalog:
+    description: Catalog holding the raw/bronze study tables
+    default: main
+  bronze_schema:
+    description: Bronze schema name pattern; {study_id} is replaced by the study ID
+    default: "{study_id}_bronze"
+  silver_catalog:
+    description: Catalog for generated Silver SDTM tables
+    default: main
+  silver_schema:
+    description: Silver SDTM schema name pattern; {study_id} is replaced by the study ID
+    default: "{study_id}_sdtm"
   agent_endpoint_name:
-    description: Model Serving endpoint that hosts the SDTM agent
-    default: sdtm-agent
+    default: sdtm-mapping-agent
   llm_endpoint:
-    description: Foundation model endpoint the agent uses (must support tool calling)
+    description: Foundation Model API endpoint with tool calling (e.g. a databricks-claude-* or Llama 3.3 endpoint)
     default: databricks-meta-llama-3-3-70b-instruct
+  embedding_endpoint:
+    default: databricks-gte-large-en
+  vector_search_endpoint:
+    default: sdtm-agent-vs
   warehouse_id:
-    description: SQL warehouse the agent uses for read-only queries and validation
+    description: SQL warehouse used by the agent (schema lookup, previews, validation, spec store)
+    default: ""
+  secret_scope:
+    description: Secret scope with the agent service principal's OAuth credentials (host, client_id, client_secret)
+    default: ""
+  trial_design_domain:
+    description: SV or TA
+    default: SV
+  ig_volume_path:
+    description: Optional UC volume path with a licensed SDTM IG (PDF/TXT/HTML)
     default: ""
 
 resources:
   jobs:
-    deploy_sdtm_agent:
-      name: "[${bundle.target}] Deploy SDTM agent"
+    # Runs one approved mapping spec: PySpark transform → Silver SDTM table → validation.
+    sdtm_transform:
+      name: "[${bundle.target}] SDTM transform"
+      max_concurrent_runs: 5
+      parameters:
+        - { name: spec_id, default: "" }
+        - { name: spec_version, default: "" }
+        - { name: target_table, default: "" }
+        - { name: source_table, default: "" }
+        - { name: requested_by, default: "" }
       tasks:
-        - task_key: deploy_agent
+        - task_key: transform_and_validate
+          environment_key: default
+          spark_python_task:
+            python_file: ./jobs/run_transform.py
+            parameters:
+              - --spec-id={{job.parameters.spec_id}}
+              - --spec-version={{job.parameters.spec_version}}
+              - --target-table={{job.parameters.target_table}}
+              - --source-table={{job.parameters.source_table}}
+              - --requested-by={{job.parameters.requested_by}}
+              - --run-id={{job.run_id}}
+              - --metadata-schema=${var.catalog}.${var.metadata_schema_name}
+      environments:
+        - environment_key: default
+          spec:
+            client: "2"
+            dependencies:
+              - pydantic>=2.0
+
+    # One-time setup + (re)deployment of the agent endpoint.
+    setup_and_deploy_agent:
+      name: "[${bundle.target}] SDTM agent setup and deploy"
+      tasks:
+        - task_key: setup_index
           notebook_task:
-            notebook_path: ./notebooks/01_deploy_agent.py
+            notebook_path: ./notebooks/00_setup.py
             base_parameters:
-              catalog: ${var.catalog}
-              schema: ${var.schema}
-              model_name: sdtm_agent
+              metadata_schema: ${var.catalog}.${var.metadata_schema_name}
+              vector_search_endpoint: ${var.vector_search_endpoint}
+              vector_search_index: ${var.catalog}.${var.metadata_schema_name}.sdtm_ig_index
+              embedding_endpoint: ${var.embedding_endpoint}
+              ig_volume_path: ${var.ig_volume_path}
+        - task_key: log_and_deploy_agent
+          depends_on:
+            - task_key: setup_index
+          notebook_task:
+            notebook_path: ./notebooks/01_log_and_deploy_agent.py
+            base_parameters:
+              uc_model_name: ${var.catalog}.${var.metadata_schema_name}.sdtm_mapping_agent
               endpoint_name: ${var.agent_endpoint_name}
+              secret_scope: ${var.secret_scope}
               llm_endpoint: ${var.llm_endpoint}
               warehouse_id: ${var.warehouse_id}
+              bronze_catalog: ${var.bronze_catalog}
+              bronze_schema: ${var.bronze_schema}
+              silver_catalog: ${var.silver_catalog}
+              silver_schema: ${var.silver_schema}
+              metadata_schema: ${var.catalog}.${var.metadata_schema_name}
+              vector_search_index: ${var.catalog}.${var.metadata_schema_name}.sdtm_ig_index
+              transform_job_id: ${resources.jobs.sdtm_transform.id}
+              trial_design_domain: ${var.trial_design_domain}
+
+    # Feedback loop: re-index approved mapping specs so they become retrievable examples.
+    refresh_sdtm_index:
+      name: "[${bundle.target}] SDTM IG index refresh"
+      schedule:
+        quartz_cron_expression: "0 0 2 * * ?"
+        timezone_id: UTC
+      tasks:
+        - task_key: refresh
+          notebook_task:
+            notebook_path: ./notebooks/00_setup.py
+            base_parameters:
+              metadata_schema: ${var.catalog}.${var.metadata_schema_name}
+              vector_search_endpoint: ${var.vector_search_endpoint}
+              vector_search_index: ${var.catalog}.${var.metadata_schema_name}.sdtm_ig_index
+              embedding_endpoint: ${var.embedding_endpoint}
+              ig_volume_path: ${var.ig_volume_path}
 
   apps:
     sdtm_chatbot:
-      name: sdtm-chatbot
-      description: Chat interface for the CDISC SDTM agent
+      name: sdtm-mapping-chat
+      description: Chat interface for the SDTM mapping agent
       source_code_path: ./app
       resources:
         - name: serving-endpoint
-          description: SDTM agent serving endpoint
+          description: SDTM mapping agent endpoint
           serving_endpoint:
             name: ${var.agent_endpoint_name}
             permission: CAN_QUERY

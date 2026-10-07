@@ -1,0 +1,23 @@
+[project]
+name = "sdtm-agent"
+version = "0.2.0"
+description = "SDTM mapping agent for Databricks: LangGraph + MLflow ChatAgent + Vector Search + PySpark"
+requires-python = ">=3.10"
+dependencies = ["pydantic>=2.0"]
+
+[project.optional-dependencies]
+agent = [
+    "mlflow>=3.1.0",
+    "databricks-sdk>=0.50.0",
+    "databricks-langchain>=0.5.0",
+    "langgraph>=0.3.0",
+    "langchain-core>=0.3.0",
+]
+dev = ["pytest>=8.0"]
+
+[tool.setuptools]
+packages = ["sdtm_agent"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

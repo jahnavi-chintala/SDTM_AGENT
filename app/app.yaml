@@ -4,5 +4,9 @@ env:
   # Name of the agent serving endpoint, injected from the app resource "serving-endpoint"
   - name: SERVING_ENDPOINT
     valueFrom: serving-endpoint
+  # service_principal (default): the app's service principal calls the endpoint.
+  # user: call it with the signed-in user's token (requires user authorization for the app).
+  - name: SDTM_APP_AUTH
+    value: service_principal
   - name: STREAMLIT_BROWSER_GATHER_USAGE_STATS
     value: "false"
