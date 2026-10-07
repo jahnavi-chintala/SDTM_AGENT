@@ -89,7 +89,9 @@ def ensure_index(config: AgentConfig, endpoint_name: str, embedding_endpoint: st
         index = vsc.get_index(endpoint_name=endpoint_name, index_name=config.vector_search_index)
     except Exception:
         log.info("Creating index %s", config.vector_search_index)
-        index = vsc.create_delta_sync_index(
+        # A new Delta Sync index runs its initial sync itself; a sync() call made
+        # while that pipeline is still setting up is rejected.
+        vsc.create_delta_sync_index(
             endpoint_name=endpoint_name,
             index_name=config.vector_search_index,
             source_table_name=source_table,
@@ -98,9 +100,14 @@ def ensure_index(config: AgentConfig, endpoint_name: str, embedding_endpoint: st
             embedding_source_column="content",
             embedding_model_endpoint_name=embedding_endpoint,
         )
-    for _ in range(60):  # a new index must be online before it can be synced
-        status = index.describe().get("status", {})
-        if status.get("ready"):
-            break
-        time.sleep(30)
-    index.sync()
+        return
+    for _ in range(60):  # the index pipeline must be idle before it can be synced again
+        try:
+            index.sync()
+            return
+        except Exception as exc:
+            if "not ready to sync" not in str(exc):
+                raise
+            log.info("Index pipeline busy, retrying sync: %s", exc)
+            time.sleep(30)
+    raise TimeoutError(f"Index {config.vector_search_index} did not become ready to sync")
