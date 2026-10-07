@@ -3,7 +3,7 @@
 A conversational agent that maps raw (bronze) clinical study tables to CDISC SDTM datasets, using the
 SDTM Implementation Guide as its only reference. A human reviews and approves every mapping in chat
 before anything is written. The project is pure Python and runs on Unity Catalog, Vector Search,
-Mosaic AI Model Serving, Jobs and Databricks Apps.
+Mosaic AI Model Serving, Jobs and Databricks Apps. The backend is Python; the chat UI is React (TypeScript).
 
 ```
 Bronze table (UC) ──get_source_schema──┐
@@ -43,7 +43,7 @@ and multi-study batch runs. Each session handles one study at a time, interactiv
 | 3 | PySpark transform executor (parameterized by spec) | `sdtm_agent/transform.py`, `mapping_spec.py`, `jobs/run_transform.py` |
 | 4 | Validation module (variables, CT codelists, ...) | `sdtm_agent/validation.py` |
 | 5 | MLflow logging + UC registration | `sdtm_agent/deployment.py`, `agent_entrypoint.py` |
-| 6 | Streamlit chat frontend (Databricks App) | `app/` |
+| 6 | React chat frontend + FastAPI backend (Databricks App) | `app/frontend/`, `app/server.py` |
 | 7 | Deployment notebook/job | `notebooks/01_log_and_deploy_agent.py`, `databricks.yml` |
 
 ## How it works
@@ -94,6 +94,14 @@ Expressions in a spec are checked so they can't contain statements, subqueries o
 `SD_SEQ_UNIQUE`, `SD_DM_UNIQUE`, `SD_DM_SUBJECT`, `SD_DATE_ORDER`, `SD_VARNAME`. The results of each job run are stored in
 `<metadata_schema>.validation_results`.
 
+### Chat app (`app/`)
+- `frontend/`: React + TypeScript (Vite). It shows mapping specs as tables with low-confidence rows highlighted,
+  spec checks, transform previews, validation findings, run status, a collapsible trace of agent steps, and
+  the **Approve vN** button. Cards update when a spec is approved or superseded. Light/dark theme; works on phones.
+- `server.py`: FastAPI. Serves the built UI from `static/` and exposes `/api/chat` and `/api/me`. It calls the agent
+  endpoint server-side, so the browser never holds a token. The user's identity always comes from the Databricks Apps SSO
+  headers (`X-Forwarded-Email`), never from the browser. System messages sent by the browser are dropped and approval tokens are format-checked.
+
 ### Knowledge / retrieval
 - `knowledge.py`: structured IG metadata for the 12 domains + TA (variables, core status, a subset of CDISC CT, standard test codes, IG assumptions).
 - `ig_corpus.py` turns that metadata into chunks. It can also chunk a **licensed SDTM IG** (PDF/TXT/HTML) you place in a UC volume
@@ -123,7 +131,11 @@ a SQL warehouse, and the Databricks CLI ≥ 0.250 (`databricks auth login`).
    deploy, run step 3, then restore the block.
 3. **Create the index, then log, register and deploy the agent:**
    `databricks bundle run setup_and_deploy_agent -t dev` (endpoint creation takes about 15 min).
-4. **Start the chat app:** `databricks bundle deploy -t dev && databricks bundle run sdtm_chatbot -t dev`
+4. **Build the UI and start the chat app** (Node 18+):
+   ```bash
+   npm --prefix app ci && npm --prefix app run build      # → app/static
+   databricks bundle deploy -t dev && databricks bundle run sdtm_chatbot -t dev
+   ```
 
 The bundle wires the transform job ID into the agent config. The `refresh_sdtm_index` job re-indexes
 approved specs nightly.
@@ -135,14 +147,21 @@ approved specs nightly.
 | SV vs TA | **SV**: it can be derived from subject visit data; TA is protocol-level and is better entered than derived | `trial_design_domain` variable (both domains are defined) |
 | Is PE needed? | Included; the IG notes say it may be dropped when only "exam done" is collected | Simply don't map it |
 | Bronze schema consistency | One schema per study, pattern `{study_id}_bronze`; the agent profiles each table rather than assuming a layout | `bronze_catalog` / `bronze_schema` |
-| App auth model | The app's service principal calls the endpoint; the user's SSO email is passed for audit | `SDTM_APP_AUTH=user` in `app/app.yaml` (+ enable user authorization) to call as the user |
+| App auth model | The app backend calls the endpoint as the app's service principal; the user's SSO email is passed for audit | `SDTM_APP_AUTH=user` in `app/app.yaml` (+ enable user authorization) to call as the signed-in user |
 | Who approves, feedback loop | Any app user with access can click Approve; it is recorded per version; approved specs are indexed as examples | Restrict app access to reviewers via app permissions; add a role check in `approve_mapping` if needed |
 
 ## Local development
 
 ```bash
 pip install -e ".[agent,dev]"
+pip install fastapi httpx uvicorn   # for the app backend tests
 pytest              # PySpark executor test runs only if pyspark is installed
+npm --prefix app run typecheck
 ```
 The tests use a fake SQL runner and a scripted LLM, so they need no Databricks connection.
-To run the UI against a deployed endpoint: `pip install -r app/requirements.txt && SERVING_ENDPOINT=sdtm-mapping-agent streamlit run app/app.py`.
+To run the UI locally against a deployed endpoint (uses your Databricks CLI profile):
+```bash
+pip install -r app/requirements.txt
+SERVING_ENDPOINT=sdtm-mapping-agent python app/server.py     # API on :8000
+npm --prefix app install && npm --prefix app run dev           # UI on :5173, proxies /api to :8000
+```

@@ -1,6 +1,11 @@
 bundle:
   name: sdtm-mapping-agent
 
+# The React UI is built into app/static (git-ignored); include it when syncing the bundle.
+sync:
+  include:
+    - app/static/**
+
 variables:
   catalog:
     description: Catalog for agent metadata (specs, validation results, IG index) and the registered model
