@@ -11,7 +11,8 @@ PIP_REQUIREMENTS = [
     "mlflow>=3.1.0",
     "databricks-sdk>=0.50.0",
     "databricks-langchain>=0.5.0",
-    "langgraph>=0.3.0",
+    "langgraph>=1.2.0",
+    "langgraph-prebuilt>=1.1.0",
     "langchain-core>=0.3.0",
     "pydantic>=2.0",
 ]
