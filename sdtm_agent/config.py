@@ -11,6 +11,25 @@ import contextvars
 import os
 from dataclasses import dataclass, field
 from typing import Any
+from urllib.parse import urlsplit
+
+
+def normalize_databricks_env() -> None:
+    """Expose workspace credentials under the names the Databricks clients read.
+
+    The SDK, databricks-langchain, Vector Search and MLflow all use unified auth,
+    which only reads upper-case DATABRICKS_HOST / DATABRICKS_TOKEN. Some
+    environments set them lower-case, and a host copied from the browser carries
+    a "/?o=<workspace-id>" suffix that breaks the API URLs. Variables that are
+    already set upper-case (e.g. on Databricks itself) are left untouched.
+    """
+    for name in ("DATABRICKS_HOST", "DATABRICKS_TOKEN"):
+        if not os.environ.get(name) and os.environ.get(name.lower()):
+            os.environ[name] = os.environ[name.lower()]
+    host = os.environ.get("DATABRICKS_HOST", "").strip()
+    if host:
+        parts = urlsplit(host if "://" in host else f"https://{host}")
+        os.environ["DATABRICKS_HOST"] = f"{parts.scheme}://{parts.netloc}"
 
 
 @dataclass

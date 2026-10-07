@@ -144,8 +144,14 @@ targets:
   dev:
     mode: development
     default: true
-    # workspace:
-    #   host: https://<your-workspace>.cloud.databricks.com
+    workspace:
+      host: https://dbc-481c797e-7d48.cloud.databricks.com
+    # This workspace has no "main" catalog; Unity Catalog's default catalog is "workspace".
+    variables:
+      catalog: workspace
+      bronze_catalog: workspace
+      silver_catalog: workspace
+      warehouse_id: 3a0609f5a845b18b  # Serverless Starter Warehouse
 
   prod:
     mode: production
