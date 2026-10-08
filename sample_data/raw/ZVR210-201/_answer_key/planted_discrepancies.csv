@@ -1,0 +1,10 @@
+area,where,detail
+Subject ID,central_lab_meridian,Patient 101007 keyed with letter O instead of zero at C2D1
+Missing samples,central_lab_meridian vs edc_rave/lbsamp.csv,301-003 C20D1 accession 40022469; 301-004 C12D1 accession 40024222; 201-003 C3D1 accession 40025840; 201-003 C10D1 accession 40025941; 401-002 C1D1 accession 40027628; 103-005 C1D15 accession 40027854; 401-003 C4D1 accession 40029743; 102-004 C4D1 accession 40030052; 501-004 C1D1 accession 40034461 recorded as collected in EDC but absent from the lab transfer
+SAE reconciliation,edc_rave/sae.csv vs safety_sponsor_pv,301-006 AE003 is serious in EDC AE form but has no SAE details page; a pulmonary embolism SAE exists only in the safety database
+Stratification,irt_randosure vs edc_rave/rand.csv,First randomised subject at site 301 has the PD-L1 stratum flipped in IRT
+Subject ID,ecoa_propoint,First randomised subject at site 102 has a trailing space in Subject
+Subject ID,bioanalytical_kestrel,About 5% of rows use the hyphenated EDC subject number instead of site+seq
+Lab results,central_lab_meridian,Re-issued rows with TEST_STATUS=CORRECTED duplicate an earlier FINAL result; haemolysed potassium results are CANCELLED with no value
+Imaging,imaging_clearview vs edc_rave/rs.csv,"Central readers use their own lesion IDs (L1..), may pick different targets, and can disagree with the investigator; ADJ rows record adjudication"
+Dates,all vendors,"Each vendor uses its own date format (ISO, DD-MON-YYYY, YYYYMMDD, MM/DD/YYYY, DD/MM/YYYY, DD.MM.YYYY, UTC stamps); EU sites send year-only birth dates"

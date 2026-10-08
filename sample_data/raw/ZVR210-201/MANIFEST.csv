@@ -1,0 +1,45 @@
+folder,vendor,role,file,rows
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,adasamp.csv,265
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,ae.csv,335
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,biosamp.csv,484
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,canhx.csv,58
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,cm.csv,234
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,dd.csv,7
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,dm.csv,58
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,dseos.csv,8
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,dseot.csv,44
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,dssf.csv,8
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,ecog.csv,515
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,eg.csv,428
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,expac.csv,479
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,exzk.csv,148
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,exzv.csv,264
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,ic.csv,58
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,ie.csv,58
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,lbsamp.csv,627
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,mh.csv,154
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,nl.csv,14
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,ntl.csv,246
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,pcsamp.csv,509
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,preg.csv,115
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,prtx.csv,58
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,rand.csv,50
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,rs.csv,266
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,sae.csv,23
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,sv.csv,955
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,tl.csv,690
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,vs.csv,515
+edc_rave,Sponsor EDC (Medidata Rave-style export),Site-entered CRF data,vsw.csv,515
+central_lab_meridian,Meridian Clinical Laboratories,Central safety lab,central_lab_results.csv,11763
+bioanalytical_northbridge,Northbridge Bioanalytical,PK and ADA lab for ZV-210,northbridge_ada.csv,331
+bioanalytical_northbridge,Northbridge Bioanalytical,PK and ADA lab for ZV-210,northbridge_pk_zv210.csv,336
+bioanalytical_kestrel,Kestrel Bioanalytical,PK lab for ZK-415 (ADC + payload),kestrel_pk_zk415.csv,346
+imaging_clearview,ClearView Imaging,"Imaging core lab, RECIST 1.1 BICR",clearview_bicr_lesions.csv,1847
+imaging_clearview,ClearView Imaging,"Imaging core lab, RECIST 1.1 BICR",clearview_bicr_timepoints.csv,577
+genomics_helixseq,HelixSeq Genomics,ctDNA (plasma) and buffy coat genomics,helixseq_ctdna_genomics.csv,267
+immunogenomics_genovue,GenoVue,Tumour/normal exome + transcriptome,genovue_immunogenomics.csv,50
+proteomics_proteomark,ProteoMark,Soluble serum proteins (NPX),proteomark_serum_npx.csv,3872
+irt_randosure,RandoSure IRT,Randomisation and drug supply,randosure_irt_dispensing.csv,1465
+irt_randosure,RandoSure IRT,Randomisation and drug supply,randosure_irt_subjects.csv,58
+ecoa_propoint,PRO-Point eCOA,Patient-reported outcomes,propoint_ecoa_qlqc30.csv,14172
+safety_sponsor_pv,Sponsor pharmacovigilance database,SAE line listing,sponsor_safety_sae_listing.csv,42
