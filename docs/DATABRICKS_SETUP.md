@@ -7,14 +7,14 @@ What gets created:
 
 | Thing | Name (defaults) | Created by |
 |---|---|---|
-| Metadata schema + tables | `main.sdtm_agent.{mapping_specs, validation_results, sdtm_ig_chunks}` | job `setup_and_deploy_agent` |
-| Vector Search endpoint + index | `sdtm-agent-vs`, `main.sdtm_agent.sdtm_ig_index` | job `setup_and_deploy_agent` |
-| Registered model | `main.sdtm_agent.sdtm_mapping_agent` | job `setup_and_deploy_agent` |
+| Metadata schema + tables | `workspace.sdtm_agent.{mapping_specs, validation_results, sdtm_ig_chunks}` | job `setup_and_deploy_agent` |
+| Vector Search endpoint + index | `sdtm-agent-vs`, `workspace.sdtm_agent.sdtm_ig_index` | job `setup_and_deploy_agent` |
+| Registered model | `workspace.sdtm_agent.sdtm_mapping_agent` | job `setup_and_deploy_agent` |
 | Agent serving endpoint | `sdtm-mapping-agent` | job `setup_and_deploy_agent` |
 | Transform job | `[dev] SDTM transform` | `databricks bundle deploy` |
 | Nightly index refresh job | `[dev] SDTM IG index refresh` | `databricks bundle deploy` |
 | Chat app | `sdtm-mapping-chat` | `databricks bundle deploy` |
-| Silver SDTM tables | `main.<study>_sdtm.<domain>` | transform job, after you approve a mapping |
+| Silver SDTM tables | `workspace.<study>_sdtm.<domain>` | transform job, after you approve a mapping |
 
 ---
 
@@ -43,9 +43,9 @@ The agent reads one bronze schema per study, named `<study_id>_bronze` (lower-ca
 SDTM tables to `<study_id>_sdtm`. For a study `ABC123`, run this in a SQL editor:
 
 ```sql
--- bronze tables come from your existing ingestion pipeline, e.g. main.abc123_bronze.demog
-CREATE SCHEMA IF NOT EXISTS main.abc123_sdtm;   -- Silver output
-CREATE SCHEMA IF NOT EXISTS main.sdtm_agent;    -- agent metadata
+-- bronze tables come from your existing ingestion pipeline, e.g. workspace.abc123_bronze.demog
+CREATE SCHEMA IF NOT EXISTS workspace.abc123_sdtm;   -- Silver output
+CREATE SCHEMA IF NOT EXISTS workspace.sdtm_agent;    -- agent metadata
 ```
 
 If your schemas follow a different pattern, set the `bronze_schema` / `silver_schema` bundle variables (step 4).
@@ -70,19 +70,28 @@ It therefore runs as a service principal.
    ```
 4. Grants (replace `<app-id>` with the Application ID):
    ```sql
-   GRANT USE CATALOG ON CATALOG main TO `<app-id>`;
-   GRANT USE SCHEMA, SELECT ON SCHEMA main.abc123_bronze TO `<app-id>`;
-   GRANT USE SCHEMA, SELECT ON SCHEMA main.abc123_sdtm TO `<app-id>`;
-   GRANT ALL PRIVILEGES ON SCHEMA main.sdtm_agent TO `<app-id>`;
+   GRANT USE CATALOG ON CATALOG workspace TO `<app-id>`;
+   GRANT USE SCHEMA, SELECT ON SCHEMA workspace.abc123_bronze TO `<app-id>`;
+   GRANT USE SCHEMA, SELECT ON SCHEMA workspace.abc123_sdtm TO `<app-id>`;
+   GRANT ALL PRIVILEGES ON SCHEMA workspace.sdtm_agent TO `<app-id>`;
    ```
    - On the SQL warehouse, go to *Permissions* and give the service principal **Can use**.
    - On the Serving endpoints `databricks-meta-llama-3-3-70b-instruct` (or your LLM) and `databricks-gte-large-en`, give it **Can query** if they are not open to all users.
    - The **Can manage run** permission on the transform job is added in step 5, after the job exists.
 
-## 3. (Optional) Licensed SDTM IG text
+## 3. (Optional) CDISC library and licensed SDTM IG text
 
-Retrieval works out of the box from the built-in IG metadata. For better answers, upload your licensed SDTM IG
-(PDF, TXT or HTML) to a volume, e.g. `/Volumes/main/sdtm_agent/sdtm_ig/`, and set `ig_volume_path` in step 4.
+Retrieval works out of the box from the built-in IG metadata. For better answers, put your licensed CDISC
+content in a volume. The default is `/Volumes/workspace/sdtm_agent/cdisc_library/`; to use another, set
+`ig_volume_path` in step 4. Two kinds of file are read:
+
+- **CDISC Library Excel exports** named like `SDTMIG_v3.4.xlsx`, `SDTM_v2.0.xlsx` and `CDASHIG_v2.3.xlsx`
+  (subfolders are fine).
+  - Several versions can sit side by side. One SDTMIG version and one CDASHIG version are indexed: set
+    `sdtmig_version` / `cdashig_version` in step 4, or leave them empty for the latest one found.
+  - The matching SDTM model version is added with the SDTMIG.
+  - CDASHIG rows carry each collection field's SDTMIG target, which helps map raw CRF columns.
+- **IG text** as PDF, TXT, MD or HTML.
 
 ## 4. Configure the bundle
 
@@ -99,6 +108,7 @@ Pass the rest as variables. Every command below uses the same flags, so it is ea
 ```bash
 export BUNDLE_VARS='--var=warehouse_id=<warehouse-id> --var=secret_scope=sdtm-agent'
 # optional: --var=llm_endpoint=databricks-claude-... --var=bronze_schema={study_id}_raw --var=ig_volume_path=/Volumes/...
+#           --var=sdtmig_version=3.4 --var=cdashig_version=2.3   (default: latest in the volume)
 ```
 
 ## 5. Deploy the jobs
@@ -143,7 +153,7 @@ Enter the study ID (e.g. `ABC123`) in the sidebar, then:
 | *Map the demographics table of study ABC123 to DM* | A **draft** spec card with a mapping table and an Approve button |
 | *Preview the DM spec* | Sample DM rows (nothing is written) |
 | Click **Approve v1** | Card turns **approved** |
-| *Run the transform* | Run link + validation report; table `main.abc123_sdtm.dm` exists |
+| *Run the transform* | Run link + validation report; table `workspace.abc123_sdtm.dm` exists |
 
 Map DM first: the other domains use `DM.USUBJID` and `DM.RFSTDTC` (for `--DY`).
 
@@ -157,7 +167,7 @@ Map DM first: the other domains use `DM.USUBJID` and `DM.RFSTDTC` (for `--DY`).
 | `PERMISSION_DENIED` on a table / schema | Grants in step 2 for the `sdtm-agent` service principal |
 | *SDTM_TRANSFORM_JOB_ID is not configured* | Re-run `setup_and_deploy_agent` after `bundle deploy` (it wires the job ID in) |
 | `execute_transform` fails to start the job | Service principal is missing **Can manage run** on the transform job (step 5) |
-| Retrieval says `builtin_fallback` | Index not ready or the service principal lacks SELECT on `main.sdtm_agent.sdtm_ig_index`; agent still works |
+| Retrieval says `builtin_fallback` | Index not ready or the service principal lacks SELECT on `workspace.sdtm_agent.sdtm_ig_index`; agent still works |
 | Transform run failed | *Workflows → SDTM transform → run → Output*; the error names the spec and variable |
 | Every request and response | Inference table created by `agents.deploy` (see the endpoint's *Inference tables* tab) |
 

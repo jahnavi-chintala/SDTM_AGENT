@@ -13,6 +13,7 @@ import re
 import time
 from typing import Any
 
+from sdtm_agent.cdisc_library import library_chunks
 from sdtm_agent.config import AgentConfig
 from sdtm_agent.ig_corpus import approved_spec_chunks, document_chunks, knowledge_chunks
 
@@ -22,7 +23,10 @@ CHUNK_COLUMNS = ["id", "domain", "chunk_type", "variable", "title", "content", "
 
 
 def read_ig_documents(volume_path: str) -> list[dict]:
-    """Chunk licensed SDTM IG documents (PDF, TXT, MD, HTML) found under a UC volume path."""
+    """Chunk licensed SDTM IG documents (PDF, TXT, MD, HTML) found under a UC volume path.
+
+    CDISC Library .xlsx exports in the same volume are read by ``cdisc_library``.
+    """
     if not volume_path or not os.path.isdir(volume_path):
         return []
     chunks = []
@@ -49,8 +53,13 @@ def read_ig_documents(volume_path: str) -> list[dict]:
 
 
 def build_corpus_table(spark: Any, config: AgentConfig, ig_volume_path: str | None = None) -> int:
-    """(Re)write the chunk table that the Delta Sync index reads from."""
+    """(Re)write the chunk table that the Delta Sync index reads from.
+
+    ``ig_volume_path`` may hold IG documents (PDF/TXT/MD/HTML) and CDISC Library .xlsx
+    exports; for the latter, one SDTMIG and one CDASHIG version are indexed (see config).
+    """
     chunks = knowledge_chunks() + read_ig_documents(ig_volume_path or "")
+    chunks += library_chunks(ig_volume_path or "", config.sdtmig_version, config.cdashig_version)
     if spark.catalog.tableExists(config.mapping_specs_table):
         approved = spark.sql(
             f"SELECT spec_json FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY spec_id ORDER BY version DESC) rn "

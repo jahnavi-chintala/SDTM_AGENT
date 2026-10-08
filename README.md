@@ -106,6 +106,11 @@ Expressions in a spec are checked so they can't contain statements, subqueries o
 - `knowledge.py`: structured IG metadata for the 12 domains + TA (variables, core status, a subset of CDISC CT, standard test codes, IG assumptions).
 - `ig_corpus.py` turns that metadata into chunks. It can also chunk a **licensed SDTM IG** (PDF/TXT/HTML) you place in a UC volume
   (`ig_volume_path`) and add **approved mapping specs**. All chunks are tagged by domain.
+- `cdisc_library.py` reads **CDISC Library Excel exports** in the same volume (`SDTMIG_v*.xlsx`, `SDTM_v*.xlsx`,
+  `CDASHIG_v*.xlsx`; default volume `/Volumes/workspace/sdtm_agent/cdisc_library`).
+  - It indexes one SDTMIG version (`sdtmig_version`, default the latest found) with its SDTM model.
+  - It also indexes one CDASHIG version (`cdashig_version`), whose fields carry their SDTMIG target.
+  - Indexing a single version stops retrieval from mixing definitions across versions.
 - The Delta Sync Vector Search index uses `databricks-gte-large-en`. If the index is unavailable, retrieval falls back to keyword search over the built-in corpus.
 
 CDISC IG text and the full CT are licensed, so they are not bundled here. Load them into the volume to improve retrieval,

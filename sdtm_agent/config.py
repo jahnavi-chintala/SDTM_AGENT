@@ -18,18 +18,21 @@ class AgentConfig:
     llm_endpoint: str = "databricks-meta-llama-3-3-70b-instruct"
     warehouse_id: str = ""
     # Bronze (raw) source tables. {study_id} is substituted, e.g. "clinical_bronze_{study_id}".
-    bronze_catalog: str = "main"
+    bronze_catalog: str = "workspace"
     bronze_schema: str = "{study_id}_bronze"
     # Silver SDTM output and agent metadata tables.
-    silver_catalog: str = "main"
+    silver_catalog: str = "workspace"
     silver_schema: str = "{study_id}_sdtm"
-    metadata_schema: str = "main.sdtm_agent"
+    metadata_schema: str = "workspace.sdtm_agent"
     # Vector Search index over the SDTM IG corpus and approved mapping specs.
-    vector_search_index: str = "main.sdtm_agent.sdtm_ig_index"
+    vector_search_index: str = "workspace.sdtm_agent.sdtm_ig_index"
     # Job that runs notebooks/jobs/run_transform.py.
     transform_job_id: str = ""
     transform_wait_seconds: int = 90
     trial_design_domain: str = "SV"
+    # CDISC standard versions indexed from the library volume; empty = latest found there.
+    sdtmig_version: str = ""
+    cdashig_version: str = ""
     # When true, approve_mapping only succeeds if the request carries an
     # approval flag set by a human in the chat UI (not by the LLM).
     require_ui_approval: bool = True
@@ -62,6 +65,8 @@ _ENV = {
     "transform_job_id": "SDTM_TRANSFORM_JOB_ID",
     "transform_wait_seconds": "SDTM_TRANSFORM_WAIT_SECONDS",
     "trial_design_domain": "SDTM_TRIAL_DESIGN_DOMAIN",
+    "sdtmig_version": "SDTM_SDTMIG_VERSION",
+    "cdashig_version": "SDTM_CDASHIG_VERSION",
     "require_ui_approval": "SDTM_REQUIRE_UI_APPROVAL",
     "max_iterations": "SDTM_MAX_ITERATIONS",
 }

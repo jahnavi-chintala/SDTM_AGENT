@@ -9,18 +9,18 @@ sync:
 variables:
   catalog:
     description: Catalog for agent metadata (specs, validation results, IG index) and the registered model
-    default: main
+    default: workspace
   metadata_schema_name:
     default: sdtm_agent
   bronze_catalog:
     description: Catalog holding the raw/bronze study tables
-    default: main
+    default: workspace
   bronze_schema:
     description: Bronze schema name pattern; {study_id} is replaced by the study ID
     default: "{study_id}_bronze"
   silver_catalog:
     description: Catalog for generated Silver SDTM tables
-    default: main
+    default: workspace
   silver_schema:
     description: Silver SDTM schema name pattern; {study_id} is replaced by the study ID
     default: "{study_id}_sdtm"
@@ -43,7 +43,13 @@ variables:
     description: SV or TA
     default: SV
   ig_volume_path:
-    description: Optional UC volume path with a licensed SDTM IG (PDF/TXT/HTML)
+    description: UC volume with licensed IG documents (PDF/TXT/HTML) and/or CDISC Library .xlsx exports
+    default: /Volumes/workspace/sdtm_agent/cdisc_library
+  sdtmig_version:
+    description: SDTMIG version to index from the library volume (e.g. 3.4); empty = latest found
+    default: ""
+  cdashig_version:
+    description: CDASHIG version to index from the library volume (e.g. 2.3); empty = latest found
     default: ""
 
 resources:
@@ -91,6 +97,8 @@ resources:
               vector_search_index: ${var.catalog}.${var.metadata_schema_name}.sdtm_ig_index
               embedding_endpoint: ${var.embedding_endpoint}
               ig_volume_path: ${var.ig_volume_path}
+              sdtmig_version: ${var.sdtmig_version}
+              cdashig_version: ${var.cdashig_version}
         - task_key: log_and_deploy_agent
           depends_on:
             - task_key: setup_index
@@ -127,6 +135,8 @@ resources:
               vector_search_index: ${var.catalog}.${var.metadata_schema_name}.sdtm_ig_index
               embedding_endpoint: ${var.embedding_endpoint}
               ig_volume_path: ${var.ig_volume_path}
+              sdtmig_version: ${var.sdtmig_version}
+              cdashig_version: ${var.cdashig_version}
 
   apps:
     sdtm_chatbot:

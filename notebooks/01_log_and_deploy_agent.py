@@ -13,17 +13,17 @@
 
 # COMMAND ----------
 
-dbutils.widgets.text("uc_model_name", "main.sdtm_agent.sdtm_mapping_agent")
+dbutils.widgets.text("uc_model_name", "workspace.sdtm_agent.sdtm_mapping_agent")
 dbutils.widgets.text("endpoint_name", "sdtm-mapping-agent")
 dbutils.widgets.text("secret_scope", "")  # service principal OAuth creds: host, client_id, client_secret
 dbutils.widgets.text("llm_endpoint", "databricks-meta-llama-3-3-70b-instruct")
 dbutils.widgets.text("warehouse_id", "")
-dbutils.widgets.text("bronze_catalog", "main")
+dbutils.widgets.text("bronze_catalog", "workspace")
 dbutils.widgets.text("bronze_schema", "{study_id}_bronze")
-dbutils.widgets.text("silver_catalog", "main")
+dbutils.widgets.text("silver_catalog", "workspace")
 dbutils.widgets.text("silver_schema", "{study_id}_sdtm")
-dbutils.widgets.text("metadata_schema", "main.sdtm_agent")
-dbutils.widgets.text("vector_search_index", "main.sdtm_agent.sdtm_ig_index")
+dbutils.widgets.text("metadata_schema", "workspace.sdtm_agent")
+dbutils.widgets.text("vector_search_index", "workspace.sdtm_agent.sdtm_ig_index")
 dbutils.widgets.text("transform_job_id", "")
 dbutils.widgets.dropdown("trial_design_domain", "SV", ["SV", "TA"])
 dbutils.widgets.dropdown("require_ui_approval", "true", ["true", "false"])
